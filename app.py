@@ -3,6 +3,10 @@ import streamlit as st
 import random
 
 st.set_page_config(page_title="Objective Question Generator")
+st.markdown("""
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8523970821848927"
+     crossorigin="anonymous"></script>
+""", unsafe_allow_html=True)
 
 st.title("📝 Objective Question Generator")
 st.write("Enter a paragraph and generate objective questions")
