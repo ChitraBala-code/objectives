@@ -1,17 +1,16 @@
 import streamlit as st
 import requests
-from PIL import Image
-import io
+import random
+import re
 
-st.set_page_config(page_title="OCR + Text Input App", layout="centered")
+st.set_page_config(page_title="Text to MCQ Generator", layout="centered")
+st.title("📷 Text → MCQ Generator")
 
-st.title("📷 OCR + Text Input Web App")
-
-# -------- OCR FUNCTION --------
+# ---------------- OCR FUNCTION ----------------
 def ocr_space(image_bytes):
     url = "https://api.ocr.space/parse/image"
     payload = {
-        "apikey": "K86421971588957",  # 👈 PUT YOUR KEY HERE
+        "apikey": "K86421971588957",
         "language": "eng",
     }
     files = {
@@ -22,39 +21,75 @@ def ocr_space(image_bytes):
 
     if "ParsedResults" in result:
         return result["ParsedResults"][0]["ParsedText"]
-    else:
-        return "No text detected"
+    return ""
 
-# -------- INPUT OPTIONS --------
+# ---------------- MCQ GENERATOR ----------------
+def generate_mcqs(text, num_questions=5):
+    sentences = re.split(r'[.!?]', text)
+    sentences = [s.strip() for s in sentences if len(s.split()) > 6]
+
+    mcqs = []
+    random.shuffle(sentences)
+
+    for sentence in sentences[:num_questions]:
+        words = sentence.split()
+        answer = random.choice(words)
+
+        question = sentence.replace(answer, "______", 1)
+
+        options = random.sample(words, min(3, len(words)))
+        if answer not in options:
+            options.append(answer)
+
+        options = list(set(options))
+        random.shuffle(options)
+
+        mcqs.append({
+            "question": question,
+            "options": options,
+            "answer": answer
+        })
+
+    return mcqs
+
+# ---------------- INPUT OPTIONS ----------------
 option = st.radio(
     "Choose input type",
     ("Camera", "Upload Image", "Text Area")
 )
 
-extracted_text = ""
+input_text = ""
 
-# -------- CAMERA INPUT --------
+# Camera
 if option == "Camera":
     image = st.camera_input("Take a photo")
-
     if image:
-        st.image(image, caption="Captured Image", use_column_width=True)
-        extracted_text = ocr_space(image.getvalue())
+        st.image(image, use_column_width=True)
+        input_text = ocr_space(image.getvalue())
 
-# -------- IMAGE UPLOAD --------
+# Image Upload
 elif option == "Upload Image":
-    image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-
+    image = st.file_uploader("Upload image", type=["png", "jpg", "jpeg"])
     if image:
-        st.image(image, caption="Uploaded Image", use_column_width=True)
-        extracted_text = ocr_space(image.getvalue())
+        st.image(image, use_column_width=True)
+        input_text = ocr_space(image.getvalue())
 
-# -------- TEXT AREA --------
+# Text Area
 elif option == "Text Area":
-    extracted_text = st.text_area("Enter text manually", height=200)
+    input_text = st.text_area("Enter text", height=200)
 
-# -------- OUTPUT --------
-st.subheader("📝 Final Text")
-st.text_area("Editable text", extracted_text, height=250)
+# ---------------- OUTPUT ----------------
+if input_text:
+    st.subheader("📄 Extracted Text")
+    st.text_area("Editable text", input_text, height=200)
 
-st.success("✅ Works on web & mobile!")
+    if st.button("🎯 Generate MCQs"):
+        mcqs = generate_mcqs(input_text)
+
+        st.subheader("📝 Generated Questions")
+        for i, mcq in enumerate(mcqs, 1):
+            st.markdown(f"**Q{i}. {mcq['question']}**")
+            for opt in mcq["options"]:
+                st.markdown(f"- {opt}")
+            st.markdown(f"✅ **Answer:** {mcq['answer']}")
+            st.divider()
