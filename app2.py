@@ -3,7 +3,7 @@ import random
 from PIL import Image
 import pytesseract
 
-#pytesseract.pytesseract.tesseract_cmd = r"C:\Users\ELCOT\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+# pytesseract.pytesseract.tesseract_cmd = r"C:\Users\ELCOT\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 
 st.set_page_config(page_title="Objective Question Generator")
 
@@ -17,11 +17,13 @@ typed_text = st.text_area("✍️ Enter text manually", height=150)
 image = st.camera_input("📷 Capture text using camera")
 
 ocr_text = ""
+
 if image is not None:
-    img = Image.open(image)
-    ocr_text = pytesseract.image_to_string(img)
-    st.subheader("📄 Extracted Text from Image")
-    st.write(ocr_text)
+    try:
+        img = Image.open(image)
+        ocr_text = pytesseract.image_to_string(img)
+    except Exception as e:
+        st.warning("OCR temporarily unavailable.")
 
 # -------- COMBINE TEXT --------
 final_text = typed_text + " " + ocr_text
@@ -59,3 +61,4 @@ if st.button("Generate Objective Questions"):
                 st.radio("Choose an option:", options, key=i)
                 st.caption(f"✅ Correct Answer: {ans}")
                 st.divider()
+
