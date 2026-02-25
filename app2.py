@@ -12,15 +12,27 @@ def ocr_space(image_bytes):
     payload = {
         "apikey": "K86421971588957",
         "language": "eng",
+        "isOverlayRequired": False,
+        "scale": True,
+        "OCREngine": 2,
     }
     files = {
-        "file": ("image.png", image_bytes)
+        "file": ("image.jpg", image_bytes)
     }
+
     response = requests.post(url, files=files, data=payload)
     result = response.json()
 
-    if "ParsedResults" in result:
-        return result["ParsedResults"][0]["ParsedText"]
+    # DEBUG INFO
+    if result.get("IsErroredOnProcessing"):
+        st.error(result.get("ErrorMessage"))
+        return ""
+
+    parsed = result.get("ParsedResults")
+    if parsed and parsed[0].get("ParsedText"):
+        return parsed[0]["ParsedText"].strip()
+
+    st.warning("⚠️ OCR could not detect readable text. Try better lighting or clearer image.")
     return ""
 
 # ---------------- MCQ GENERATOR ----------------
@@ -58,14 +70,13 @@ option = st.radio(
     ("Camera", "Upload Image", "Text Area")
 )
 
-input_text = ""
+st.subheader("📄 Extracted / Input Text")
 
-# Camera
-if option == "Camera":
-    image = st.camera_input("Take a photo")
-    if image:
-        st.image(image, use_column_width=True)
-        input_text = ocr_space(image.getvalue())
+input_text = st.text_area(
+    "Editable text",
+    value=input_text if input_text else "",
+    height=220
+)
 
 # Image Upload
 elif option == "Upload Image":
@@ -97,4 +108,5 @@ if st.button("🎯 Generate MCQs"):
             st.divider()
             st.markdown(f"✅ **Answer:** {mcq['answer']}")
             st.divider()
+
 
