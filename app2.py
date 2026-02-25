@@ -70,22 +70,23 @@ option = st.radio(
     ("Camera", "Upload Image", "Text Area")
 )
 
-st.subheader("📄 Extracted / Input Text")
+input_text = ""
 
-input_text = st.text_area(
-    "Editable text",
-    value=input_text if input_text else "",
-    height=220
-)
+# -------- CAMERA INPUT --------
+if option == "Camera":
+    image = st.camera_input("Take a photo")
+    if image:
+        st.image(image, use_column_width=True)
+        input_text = ocr_space(image.getvalue())
 
-# Image Upload
+# -------- IMAGE UPLOAD --------
 elif option == "Upload Image":
     image = st.file_uploader("Upload image", type=["png", "jpg", "jpeg"])
     if image:
         st.image(image, use_column_width=True)
         input_text = ocr_space(image.getvalue())
 
-# Text Area
+# -------- TEXT AREA --------
 elif option == "Text Area":
     input_text = st.text_area("Enter text", height=200)
 
@@ -108,5 +109,6 @@ if st.button("🎯 Generate MCQs"):
             st.divider()
             st.markdown(f"✅ **Answer:** {mcq['answer']}")
             st.divider()
+
 
 
