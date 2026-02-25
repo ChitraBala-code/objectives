@@ -79,11 +79,13 @@ elif option == "Text Area":
     input_text = st.text_area("Enter text", height=200)
 
 # ---------------- OUTPUT ----------------
-if input_text:
-    st.subheader("📄 Extracted Text")
-    st.text_area("Editable text", input_text, height=200)
+st.subheader("📄 Extracted / Input Text")
+input_text = st.text_area("Editable text", input_text, height=200)
 
-    if st.button("🎯 Generate MCQs"):
+if st.button("🎯 Generate MCQs"):
+    if input_text.strip() == "":
+        st.warning("Please enter text or capture an image first")
+    else:
         mcqs = generate_mcqs(input_text)
 
         st.subheader("📝 Generated Questions")
@@ -93,3 +95,6 @@ if input_text:
                 st.markdown(f"- {opt}")
             st.markdown(f"✅ **Answer:** {mcq['answer']}")
             st.divider()
+            st.markdown(f"✅ **Answer:** {mcq['answer']}")
+            st.divider()
+
