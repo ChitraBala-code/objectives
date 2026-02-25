@@ -1,64 +1,60 @@
 import streamlit as st
-import random
+import requests
 from PIL import Image
-import pytesseract
+import io
 
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Users\ELCOT\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+st.set_page_config(page_title="OCR + Text Input App", layout="centered")
 
-st.set_page_config(page_title="Objective Question Generator")
+st.title("📷 OCR + Text Input Web App")
 
-st.title("📝 Objective Question Generator")
-st.write("Use text input, camera input, or both")
+# -------- OCR FUNCTION --------
+def ocr_space(image_bytes):
+    url = "https://api.ocr.space/parse/image"
+    payload = {
+        "apikey": "K86421971588957",  # 👈 PUT YOUR KEY HERE
+        "language": "eng",
+    }
+    files = {
+        "file": ("image.png", image_bytes)
+    }
+    response = requests.post(url, files=files, data=payload)
+    result = response.json()
 
-# -------- TEXT INPUT --------
-typed_text = st.text_area("✍️ Enter text manually", height=150)
+    if "ParsedResults" in result:
+        return result["ParsedResults"][0]["ParsedText"]
+    else:
+        return "No text detected"
+
+# -------- INPUT OPTIONS --------
+option = st.radio(
+    "Choose input type",
+    ("Camera", "Upload Image", "Text Area")
+)
+
+extracted_text = ""
 
 # -------- CAMERA INPUT --------
-image = st.camera_input("📷 Capture text using camera")
+if option == "Camera":
+    image = st.camera_input("Take a photo")
 
-ocr_text = ""
+    if image:
+        st.image(image, caption="Captured Image", use_column_width=True)
+        extracted_text = ocr_space(image.getvalue())
 
-if image is not None:
-    try:
-        img = Image.open(image)
-        ocr_text = pytesseract.image_to_string(img)
-    except Exception as e:
-        st.warning("OCR temporarily unavailable.")
+# -------- IMAGE UPLOAD --------
+elif option == "Upload Image":
+    image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-# -------- COMBINE TEXT --------
-final_text = typed_text + " " + ocr_text
+    if image:
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+        extracted_text = ocr_space(image.getvalue())
 
-# -------- QUESTION GENERATOR --------
-def generate_mcqs(text):
-    sentences = [s.strip() for s in text.split(".") if len(s.split()) > 6]
-    questions = []
+# -------- TEXT AREA --------
+elif option == "Text Area":
+    extracted_text = st.text_area("Enter text manually", height=200)
 
-    for sent in sentences:
-        words = sent.split()
-        answer = random.choice(words)
-        question = sent.replace(answer, "______", 1)
+# -------- OUTPUT --------
+st.subheader("📝 Final Text")
+st.text_area("Editable text", extracted_text, height=250)
 
-        options = random.sample(words, min(4, len(words)))
-        if answer not in options:
-            options[0] = answer
-
-        questions.append((question, options, answer))
-
-    return questions
-
-# -------- BUTTON --------
-if st.button("Generate Objective Questions"):
-    if not final_text.strip():
-        st.warning("Please enter text or use the camera.")
-    else:
-        mcqs = generate_mcqs(final_text)
-
-        if not mcqs:
-            st.error("Not enough content to generate questions.")
-        else:
-            for i, (q, options, ans) in enumerate(mcqs, 1):
-                st.subheader(f"Q{i}. {q}")
-                st.radio("Choose an option:", options, key=i)
-                st.caption(f"✅ Correct Answer: {ans}")
-                st.divider()
-
+st.success("✅ Works on web & mobile!")
